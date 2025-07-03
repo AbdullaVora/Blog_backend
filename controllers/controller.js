@@ -24,8 +24,8 @@ const addBlog = async (req, res) => {
             media: cloudMedia.url,
             category,
             tags,
-            likes: likes || 0,
-            comments: comments || []
+            likes: [],
+            comments: []
         })
         res.status(201).json({ message: "Blog added successfully", blog });
     } catch (error) {
@@ -47,50 +47,6 @@ const getBlogs = async (req, res) => {
     }
 }
 
-// const updateBlog = async (req, res) => {
-//     try {
-//         const blogId = req.params.id;
-
-//         const findBlog = await Blog.findById(blogId);
-
-//         // const { error } = validateUpdateBlog(req.body);
-//         // if (error) {
-//         //     return res.status(400).json({ error: "Validation Error", message: error.details.map(detail => detail.message) });
-//         // }
-//         const { title, description, author, media, category, tags, likes, comments } = req.body;
-
-//         let cloudMedia = null;
-
-//         if (media && media.startsWith("data:")) {
-//             cloudMedia = await uploadMedia(media, "BlogsMedia");
-//             if (!cloudMedia) {
-//                 return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
-//             }
-//         }
-
-
-//         const updateBlog = await Blog.findByIdAndUpdate(blogId, {
-//             title: title || findBlog.title,
-//             description: description || findBlog.description,
-//             author: author || findBlog.author,
-//             media: cloudMedia.url || findBlog.media,
-//             category: category || findBlog.category,
-//             tags: tags || findBlog.tags,
-//             likes: likes || findBlog.likes || 0,
-//             comments: comments || findBlog.comments || []
-//         }, { new: true, runValidators: true });
-
-//         if (!updateBlog) {
-//             return res.status(404).json({ error: "Blog not found", message: "No blog found with this ID." });
-//         }
-
-//         res.status(200).json({ message: "Blog updated successfully", blog: updateBlog });
-
-//     } catch (error) {
-//         console.error("Error in updateBlog:", error);
-//         res.status(500).json({ error: "Internal Server Error", message: error.message });
-//     }
-// }
 
 const updateBlog = async (req, res) => {
     try {
@@ -130,6 +86,7 @@ const updateBlog = async (req, res) => {
         if (comments) {
             const newComment = {
                 user: comments.user,
+                name: comments.name || "Anonymous", // Use provided name or fallback to "Anonymous"
                 comment: comments.comment,
                 createdAt: new Date()
             };

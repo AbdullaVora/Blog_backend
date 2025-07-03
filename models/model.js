@@ -90,6 +90,10 @@ const blogSchema = mongoose.Schema({
             ref: 'User',
             required: true
         },
+        name: {
+            type: String,
+            default: "Anonymous"  // Default name if not provided
+        },
         comment: {
             type: String,
             required: true
