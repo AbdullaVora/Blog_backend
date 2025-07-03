@@ -59,25 +59,49 @@ const validateUpdateBlog = (data) => {
 
 const validateUser = (data) => {
     const schema = Joi.object({
-        name: Joi.string().required(),
-        email: Joi.string().email().required(),
-        media: Joi.string().optional(), // or Joi.string().uri() if expecting URL
-        password: Joi.string().required(),
-        role: Joi.string().valid("admin", "user").default("user")
-    }).options({ stripUnknown: true }); // this removes unknown fields instead of rejecting
+        name: Joi.string().required().messages({
+            "string.empty": "Name is required.",
+            "any.required": "Name is required."
+        }),
+        email: Joi.string().email().required().messages({
+            "string.empty": "Email is required.",
+            "string.email": "Please enter a valid email address.",
+            "any.required": "Email is required."
+        }),
+        media: Joi.string().optional().messages({
+            "string.base": "Media must be a string URL."
+        }),
+        password: Joi.string().required().messages({
+            "string.empty": "Password is required.",
+            "any.required": "Password is required."
+        }),
+        role: Joi.string().valid("admin", "user").default("user").messages({
+            "any.only": "Role must be either 'admin' or 'user'."
+        })
+    }).options({ stripUnknown: true });
 
-    return schema.validate(data);
+    return schema.validate(data, { abortEarly: false }); // returns all errors
 };
+
 
 
 const validateLogin = (data) => {
     const schema = Joi.object({
-        email: Joi.string().email().required(),
-        password: Joi.string().min(6).max(100).required()
+        email: Joi.string().email().required().messages({
+            "string.empty": "Email is required.",
+            "string.email": "Please enter a valid email address.",
+            "any.required": "Email is required."
+        }),
+        password: Joi.string().min(6).max(100).required().messages({
+            "string.empty": "Password is required.",
+            "string.min": "Password must be at least 6 characters long.",
+            "string.max": "Password cannot exceed 100 characters.",
+            "any.required": "Password is required."
+        })
     });
 
-    return schema.validate(data, { abortEarly: false });  // moved inside the function
-}
+    return schema.validate(data, { abortEarly: false });
+};
 
 
 module.exports = { validateBlog, validateUser, validateLogin, validateUpdateBlog };

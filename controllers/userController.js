@@ -45,7 +45,8 @@ const login = async (req, res) => {
     try {
         const { error } = validateLogin(req.body);
         if (error) {
-            return res.status(400).json({ error: "Validation Error", message: error.details.map(detail => detail.message) });
+            console.error("Validation error:", error.details);
+            return res.status(400).json({ error: "Validation Error", message: error.details[0].message});
         }
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -104,7 +105,7 @@ const updateUser = async (req, res) => {
         const userId = req.params.id;
         const { error } = validateUser(req.body);
         if (error) {
-            return res.status(400).json({ error: "Validation Error", message: error.details.map(detail => detail.message) });
+            return res.status(400).json({ error: "Validation Error", message: error.details[0].message });
         }
         const { name, email, media, role } = req.body;
         const cloudMedia = await uploadMedia(media, "BlogUsers");
