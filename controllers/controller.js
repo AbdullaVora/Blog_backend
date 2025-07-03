@@ -1,0 +1,192 @@
+const { uploadMedia } = require("../helper/uploadMedia");
+const { validateBlog, validateUpdateBlog } = require("../helper/validation");
+const Blog = require("../models/model");
+
+const addBlog = async (req, res) => {
+    try {
+        // console.log("req.body", req.body);
+        // const { error } = validateBlog(req.body);
+        // if (error) {
+        //     return res.status(400).json({ error: "Validation Error", message: error.details.map(detail => detail.message) });
+        // }
+        const { title, description, author, media, category, tags, likes, comments } = req.body;
+
+        const cloudMedia = await uploadMedia(media, "BlogsMedia");
+        console.log("cloudMedia", cloudMedia);
+        if (!cloudMedia) {
+            return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+        }
+
+        const blog = await Blog.create({
+            title,
+            description,
+            author,
+            media: cloudMedia.url,
+            category,
+            tags,
+            likes: likes || 0,
+            comments: comments || []
+        })
+        res.status(201).json({ message: "Blog added successfully", blog });
+    } catch (error) {
+        console.error("Error in addBlog:", error);
+        res.status(500).json({ error: "Internal Server Error", message: error.message });
+    }
+}
+
+const getBlogs = async (req, res) => {
+    try {
+        const blogs = await Blog.find().sort({ createdAt: -1 }); // Sort by creation date, newest first
+        if (!blogs || blogs.length === 0) {
+            return res.status(404).json({ error: "No blogs found", message: "No blogs available in the database." });
+        }
+        res.status(200).json({ message: "Blogs retrieved successfully", blogs });
+    } catch (error) {
+        console.error("Error in getBlogs:", error);
+        res.status(500).json({ error: "Internal Server Error", message: error.message });
+    }
+}
+
+// const updateBlog = async (req, res) => {
+//     try {
+//         const blogId = req.params.id;
+
+//         const findBlog = await Blog.findById(blogId);
+
+//         // const { error } = validateUpdateBlog(req.body);
+//         // if (error) {
+//         //     return res.status(400).json({ error: "Validation Error", message: error.details.map(detail => detail.message) });
+//         // }
+//         const { title, description, author, media, category, tags, likes, comments } = req.body;
+
+//         let cloudMedia = null;
+
+//         if (media && media.startsWith("data:")) {
+//             cloudMedia = await uploadMedia(media, "BlogsMedia");
+//             if (!cloudMedia) {
+//                 return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+//             }
+//         }
+
+
+//         const updateBlog = await Blog.findByIdAndUpdate(blogId, {
+//             title: title || findBlog.title,
+//             description: description || findBlog.description,
+//             author: author || findBlog.author,
+//             media: cloudMedia.url || findBlog.media,
+//             category: category || findBlog.category,
+//             tags: tags || findBlog.tags,
+//             likes: likes || findBlog.likes || 0,
+//             comments: comments || findBlog.comments || []
+//         }, { new: true, runValidators: true });
+
+//         if (!updateBlog) {
+//             return res.status(404).json({ error: "Blog not found", message: "No blog found with this ID." });
+//         }
+
+//         res.status(200).json({ message: "Blog updated successfully", blog: updateBlog });
+
+//     } catch (error) {
+//         console.error("Error in updateBlog:", error);
+//         res.status(500).json({ error: "Internal Server Error", message: error.message });
+//     }
+// }
+
+const updateBlog = async (req, res) => {
+    try {
+        const blogId = req.params.id;
+        const findBlog = await Blog.findById(blogId);
+
+        if (!findBlog) {
+            return res.status(404).json({ error: "Blog not found", message: "No blog found with this ID." });
+        }
+
+        const { title, description, author, media, category, tags, likes, comments } = req.body;
+
+        let cloudMedia = null;
+        if (media && media.startsWith("data:")) {
+            cloudMedia = await uploadMedia(media, "BlogsMedia");
+            if (!cloudMedia) {
+                return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+            }
+        }
+
+        // Create update object with only the fields that are being updated
+        const updateData = {
+            title: title || findBlog.title,
+            description: description || findBlog.description,
+            author: author || findBlog.author,
+            media: cloudMedia?.url || findBlog.media,
+            category: category || findBlog.category,
+            tags: tags || findBlog.tags,
+        };
+
+        // Only update likes if they are provided in the request
+        if (likes) {
+            updateData.likes = Array.isArray(likes) ? likes : findBlog.likes || [];
+        }
+
+        // Only update comments if new comment is provided
+        if (comments) {
+            const newComment = {
+                user: comments.user,
+                comment: comments.comment,
+                createdAt: new Date()
+            };
+            updateData.$push = { comments: newComment };
+        }
+
+        const updatedBlog = await Blog.findByIdAndUpdate(blogId, updateData, {
+            new: true,
+            runValidators: true
+        }).populate('author', 'name').populate('comments.user', 'name');
+
+        res.status(200).json({
+            message: "Blog updated successfully",
+            blogs: updatedBlog
+        });
+
+    } catch (error) {
+        console.error("Error in updateBlog:", error);
+        res.status(500).json({
+            error: "Internal Server Error",
+            message: error.message
+        });
+    }
+}
+
+const getBlogById = async (req, res) => {
+    try {
+        const blogId = req.params.id;
+        const blog = await Blog.findById(blogId);
+        if (!blog) {
+            return res.status(404).json({ error: "Blog not found", message: "No blog found with this ID." });
+        }
+        res.status(200).json({ message: "Blog retrieved successfully", blog });
+    } catch (error) {
+        console.error("Error in getBlogById:", error);
+        res.status(500).json({ error: "Internal Server Error", message: error.message });
+    }
+}
+
+const deleteBlog = async (req, res) => {
+    try {
+        const blogId = req.params.id;
+        const deletedBlog = await Blog.findByIdAndDelete(blogId);
+        if (!deletedBlog) {
+            return res.status(404).json({ error: "Blog not found", message: "No blog found with this ID." });
+        }
+        res.status(200).json({ message: "Blog deleted successfully", blog: deletedBlog });
+    } catch (error) {
+        console.error("Error in deleteBlog:", error);
+        res.status(500).json({ error: "Internal Server Error", message: error.message });
+    }
+}
+
+module.exports = {
+    addBlog,
+    getBlogs,
+    updateBlog,
+    getBlogById,
+    deleteBlog
+};
