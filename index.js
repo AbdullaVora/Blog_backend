@@ -14,6 +14,7 @@ const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
             "http://localhost:5173",
+            "https://blog-frontend-six-silk.vercel.app"
         ];
 
         if (!origin || allowedOrigins.includes(origin)) {
