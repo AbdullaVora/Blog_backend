@@ -3,10 +3,10 @@ const { addBlog, getBlogs, getBlogById, updateBlog, deleteBlog } = require('../c
 const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
-router.post("/addBlog", addBlog);
+router.post("/addBlog", authMiddleware, addBlog);
 router.get("/getBlogs", getBlogs);
 router.get("/getBlogById/:id", getBlogById);
-router.put("/updateBlog/:id", updateBlog);
-router.delete("/deleteBlog/:id", deleteBlog);
+router.put("/updateBlog/:id", authMiddleware, updateBlog);
+router.delete("/deleteBlog/:id", authMiddleware, deleteBlog);
 
 module.exports = router;

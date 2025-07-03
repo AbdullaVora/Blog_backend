@@ -59,15 +59,16 @@ const validateUpdateBlog = (data) => {
 
 const validateUser = (data) => {
     const schema = Joi.object({
-        name: Joi.string().min(3).max(50).required(),
+        name: Joi.string().required(),
         email: Joi.string().email().required(),
-        password: Joi.string().min(6).max(100).required(),
-        role: Joi.string().valid('user', 'admin').default('user'),
-        media: Joi.string().uri().optional()
-    });
+        media: Joi.string().optional(), // or Joi.string().uri() if expecting URL
+        password: Joi.string().required(),
+        role: Joi.string().valid("admin", "user").default("user")
+    }).options({ stripUnknown: true }); // this removes unknown fields instead of rejecting
 
-    return schema.validate(data, { abortEarly: false });  // moved inside the function
-}
+    return schema.validate(data);
+};
+
 
 const validateLogin = (data) => {
     const schema = Joi.object({

@@ -11,17 +11,31 @@ const addBlog = async (req, res) => {
         // }
         const { title, description, author, media, category, tags, likes, comments } = req.body;
 
-        const cloudMedia = await uploadMedia(media, "BlogsMedia");
-        console.log("cloudMedia", cloudMedia);
-        if (!cloudMedia) {
-            return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+        let mediaUrl = media;
+
+
+        // const cloudMedia = await uploadMedia(media, "BlogsMedia");
+        // console.log("cloudMedia", cloudMedia);
+        // if (!cloudMedia) {
+        //     return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+        // }
+
+        if (typeof media === "string" && media.startsWith("data:")) {
+            const cloudMedia = await uploadMedia(media, "BlogsMedia");
+            console.log("cloudMedia", cloudMedia);
+
+            if (!cloudMedia) {
+                return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+            }
+
+            mediaUrl = cloudMedia.url; // or whatever URL field your upload function returns
         }
 
         const blog = await Blog.create({
             title,
             description,
             author,
-            media: cloudMedia.url,
+            media: mediaUrl,
             category,
             tags,
             likes: [],
@@ -60,13 +74,14 @@ const updateBlog = async (req, res) => {
         const { title, description, author, media, category, tags, likes, comments } = req.body;
 
         let cloudMedia = null;
-        if (media && media.startsWith("data:")) {
+        if (media && media.startsWith("data: ")) {
             cloudMedia = await uploadMedia(media, "BlogsMedia");
             if (!cloudMedia) {
                 return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
             }
+        } else {
+            cloudMedia = { url: media }; // If media is not a data URL, use it as is
         }
-
         // Create update object with only the fields that are being updated
         const updateData = {
             title: title || findBlog.title,
