@@ -74,13 +74,16 @@ const updateBlog = async (req, res) => {
         const { title, description, author, media, category, tags, likes, comments } = req.body;
 
         let cloudMedia = null;
-        if (media && media.startsWith("data: ")) {
-            cloudMedia = await uploadMedia(media, "BlogsMedia");
-            if (!cloudMedia) {
-                return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+        if (media) {
+            if (media.startsWith("data:")) {
+                console.log("Media is a data URL, uploading to cloud");
+                cloudMedia = await uploadMedia(media, "BlogsMedia");
+                if (!cloudMedia) {
+                    return res.status(500).json({ error: "Media Upload Failed", message: "Failed to upload media. Please try again." });
+                }
+            } else {
+                cloudMedia = { url: media }; // If media is not a data URL, use it as is
             }
-        } else {
-            cloudMedia = { url: media }; // If media is not a data URL, use it as is
         }
         // Create update object with only the fields that are being updated
         const updateData = {
